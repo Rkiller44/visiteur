@@ -29,5 +29,3 @@ nav a.router-link-exact-active {
 }
 </style>
 
-
-enole 
