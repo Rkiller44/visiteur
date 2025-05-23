@@ -1,31 +1,37 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view/>
+  <div class="top">
+    <h1>GESTION DES VISITEURS</h1>
+  </div>
+  <div id="app">
+    <router-view/>
+  </div>
 </template>
+  
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+@font-face {
+  font-family: Font;
+  src: url(/src/assets/font/Poppins.ttf);
 }
 
-nav {
-  padding: 30px;
+* {
+  font-family: Font;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-decoration: none;
 }
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
+body {
+  width: 100vw;
 }
-
-nav a.router-link-exact-active {
-  color: #42b983;
+.top {
+  background: grey;
+  color: white;
+  height: 50px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-content: center;
 }
 </style>
 
