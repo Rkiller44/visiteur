@@ -1,36 +1,33 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/Home.vue'
-import AjoutView from '../views/Ajout.vue'
-import ListView from '../views/List.vue'
-import StatView from '../views/Stat.vue'
-
+import { createRouter, createWebHistory } from 'vue-router';
+import Ajout from '../views/Ajout.vue';
+import List from '../views/List.vue';
+import Stat from '../views/Stat.vue';
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    redirect: '/ajout'
   },
   {
-    path: '/Ajout',
-    name: 'ajout',
-    component: AjoutView
+    path: '/ajout',
+    name: 'Ajout',
+    component: Ajout
   },
   {
-    path: '/List',
-    name: 'list',
-    component: ListView
+    path: '/list',
+    name: 'List',
+    component: List
   },
   {
-    path: '/Stat',
-    name: 'stat',
-    component: StatView
+    path: '/stat',
+    name: 'Stat',
+    component: Stat
   }
-]
+];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(),
   routes
-})
+});
 
-export default router
+export default router;

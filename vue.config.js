@@ -1,3 +1,13 @@
 module.exports = {
-  publicPath: './'
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost/backend',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
+  }
 }
