@@ -1,18 +1,21 @@
 <template>
   <div class="ajout-container">
-    <h2>Ajouter un visiteur</h2>
+    <h2>Ajout d'un visiteur</h2>
     <form @submit.prevent="submitForm">
       <div class="form-group">
         <label>Nom :</label>
         <input v-model="visiteur.nom" required>
+        <span class="error-message" v-if="erreurs.nom">{{ erreurs.nom }}</span>
       </div>
       <div class="form-group">
         <label>Nombre de jours :</label>
         <input v-model.number="visiteur.nombre_jours" type="number" required>
+        <span class="error-message" v-if="erreurs.jours">{{ erreurs.jours }}</span>
       </div>
       <div class="form-group">
         <label>Tarif journalier :</label>
         <input v-model.number="visiteur.tarif_journalier" type="number" step="0.01" required>
+        <span class="error-message" v-if="erreurs.tarif">{{ erreurs.tarif }}</span>
       </div>
       <button type="submit">Ajouter</button>
     </form>
@@ -24,6 +27,7 @@
 
 <script>
 export default {
+  
   data() {
     return {
       visiteur: {
@@ -31,12 +35,57 @@ export default {
         nombre_jours: 0,
         tarif_journalier: 0
       },
+      erreurs: {
+        jours: '',
+        tarif: ''
+      },
       message: '',
       success: false
     }
   },
+
+  computed: {
+    formulaireValide() {
+      return this.visiteur.nombre_jours > 0 && 
+             this.visiteur.tarif_journalier > 0 &&
+             !this.erreurs.jours && 
+             !this.erreurs.tarif;
+    }
+  },
+
   methods: {
+
+     validerJours() {
+      if (this.visiteur.nombre_jours <= 0) {
+        this.erreurs.jours = 'Doit être supérieur à 0';
+      } else if (!Number.isInteger(this.visiteur.nombre_jours)) {
+        this.erreurs.jours = 'Doit être un nombre entier';
+      } else {
+        this.erreurs.jours = '';
+      }
+    },
+
+     validerTarif() {
+      if (this.visiteur.tarif_journalier <= 0) {
+        this.erreurs.tarif = 'Doit être supérieur à 0';
+      } else if (isNaN(this.visiteur.tarif_journalier)) {
+        this.erreurs.tarif = 'Doit être un nombre valide';
+      } else {
+        this.erreurs.tarif = '';
+      }
+    },
+
     async submitForm() {
+
+      this.validerJours();
+      this.validerTarif();
+
+      if (!this.formulaireValide) {
+        this.message = 'Veuillez corriger les erreurs dans le formulaire';
+        this.success = false;
+        return;
+      }
+
       try {
         const response = await fetch('/api/api/visiteurs.php', {
           method: 'POST',
@@ -52,9 +101,10 @@ export default {
         
         if (result.success) {
           this.visiteur = { nom: '', nombre_jours: 0, tarif_journalier: 0 };
+          this.erreurs = { nom: '', jours: '', tarif: '' };
         }
       } catch (error) {
-        this.message = 'Erreur lors de l\'ajout';
+        this.message = 'Erreur lors de la communication avec le serveur';
         this.success = false;
       }
     }
@@ -120,5 +170,8 @@ button:hover {
 .error {
   background-color: #f2dede;
   color: #a94442;
+}
+span {
+  color:  red;
 }
 </style>

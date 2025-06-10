@@ -17,7 +17,7 @@
           <td v-else><input v-model="visiteur.nom"></td>
           
           <td v-if="!visiteur.editing">{{ visiteur.nombre_jours }}</td>
-          <td v-else><input v-model.number="visiteur.nombre_jours" type="number"></td>
+          <td v-else><input v-model.number="visiteur.nombre_jours" type="number" min="1"></td>
           
           <td v-if="!visiteur.editing">{{ visiteur.tarif_journalier }}</td>
           <td v-else><input v-model.number="visiteur.tarif_journalier" type="number" step="0.01"></td>
@@ -124,7 +124,7 @@ table {
 th, td {
   border: 1px solid #ddd;
   padding: 8px;
-  text-align: left;
+  text-align: center;
 }
 th {
   background-color: #f2f2f2;
