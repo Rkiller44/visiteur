@@ -20,7 +20,7 @@
           <td v-else><input v-model.number="visiteur.nombre_jours" type="number" min="1"></td>
           
           <td v-if="!visiteur.editing">{{ visiteur.tarif_journalier }}</td>
-          <td v-else><input v-model.number="visiteur.tarif_journalier" type="number" step="0.01"></td>
+          <td v-else><input v-model.number="visiteur.tarif_journalier" type="number" step="1"></td>
           
           <td>{{ visiteur.tarif }}</td>
           
@@ -38,6 +38,12 @@
         </tr>
       </tbody>
     </table>
+    <div v-if="ejour" :class="['message', success ? 'success' : 'error']">
+      {{ ejour }}
+    </div>
+    <div v-if="etarif" :class="['message', success ? 'success' : 'error']">
+      {{ etarif }}
+    </div>
     <div v-if="message" :class="['message', success ? 'success' : 'error']">
       {{ message }}
     </div>
@@ -50,22 +56,75 @@ export default {
     return {
       visiteurs: [],
       message: '',
-      success: false
+      ejour: '',
+      etarif: '',
+      success: false,
     }
   },
   async created() {
     await this.fetchVisiteurs();
   },
   methods: {
+
+  
     async fetchVisiteurs() {
       try {
         const response = await fetch('/api/api/visiteurs.php');
-        this.visiteurs = (await response.json()).map(v => ({ ...v, editing: false }));
+        this.visiteurs = (await response.json()).map(v => ({ 
+          ...v, 
+          editing: false,
+          
+        }));
       } catch (error) {
         console.error('Erreur:', error);
+        this.message = 'Erreur lors du chargement des visiteurs';
+        this.success = false;
       }
     },
+
+     toggleEdit(visiteur) {
+      visiteur.editing = !visiteur.editing;on
+      if (visiteur.editing) {
+        visiteur.errors.jours = '';
+        visiteur.errors.tarif = '';
+      }
+    },
+    
+    validateJours(visiteur) {
+      if (visiteur.nombre_jours <= 0) {
+        this.ejour = 'Le nombre de jours doit être positif';
+        return false;
+      } else if (!Number.isInteger(visiteur.nombre_jours)) {
+        this.ejour = 'Doit être un nombre entier';
+        return false;
+      }
+      this.ejour = '';
+      return true;
+    },
+
+    validateTarif(visiteur) {
+      if (visiteur.tarif_journalier <= 0) {
+        this.etarif = 'Le tarif doit être positif';
+        return false;
+      }
+      this.etarif = '';
+      return true;
+    },
+
+    validateBeforeUpdate(visiteur) {
+      const validJours = this.validateJours(visiteur);
+      const validTarif = this.validateTarif(visiteur);
+      
+      if (!validJours || !validTarif) {
+        this.message = 'Veuillez corriger les erreurs avant de sauvegarder';
+        this.success = false;
+        return false;
+      }
+      return true;
+    },
+
     async updateVisiteur(visiteur) {
+      if (!this.validateBeforeUpdate(visiteur)) return;
       try {
         const response = await fetch(`/api/api/visiteurs.php?id=${visiteur.id}`, {
           method: 'PUT',
