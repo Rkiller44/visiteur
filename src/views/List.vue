@@ -14,13 +14,41 @@
       <tbody>
         <tr v-for="visiteur in visiteurs" :key="visiteur.id">
           <td v-if="!visiteur.editing">{{ visiteur.nom }}</td>
-          <td v-else><input v-model="visiteur.nom"></td>
-          
+          <td v-else>
+            <input 
+            v-model.trim="visiteur.nom" 
+            @input="validateNom(visiteur)"
+            @blur="validateNom(visiteur)"
+            :class="{ 'input-error': visiteur.errors.nom }"
+            ><br>
+            <span class="error-message" v-if="visiteur.errors.nom">{{ visiteur.errors.nom }}</span>
+          </td>
           <td v-if="!visiteur.editing">{{ visiteur.nombre_jours }}</td>
-          <td v-else><input v-model.number="visiteur.nombre_jours" type="number" min="1"></td>
+            <td v-else>
+            <input 
+              v-model.number="visiteur.nombre_jours" 
+              type="number" 
+              min="1"
+              @input="validateJours(visiteur)"
+              @blur="validateJours(visiteur)"
+              :class="{ 'input-error': visiteur.errors.jours }"
+            ><br>
+            <span class="error-message" v-if="visiteur.errors.jours">{{ visiteur.errors.jours }}</span>
+          </td>
           
           <td v-if="!visiteur.editing">{{ visiteur.tarif_journalier }}</td>
-          <td v-else><input v-model.number="visiteur.tarif_journalier" type="number" step="1"></td>
+               <td v-else>
+            <input 
+              v-model.number="visiteur.tarif_journalier" 
+              type="number" 
+              min="1"
+              step="1000"
+              @input="validateTarif(visiteur)"
+              @blur="validateTarif(visiteur)"
+              :class="{ 'input-error': visiteur.errors.tarif }"
+            ><br>
+            <span class="error-message" v-if="visiteur.errors.tarif">{{ visiteur.errors.tarif }}</span>
+          </td>
           
           <td>{{ visiteur.tarif }}</td>
           
@@ -38,12 +66,7 @@
         </tr>
       </tbody>
     </table>
-    <div v-if="ejour" :class="['message', success ? 'success' : 'error']">
-      {{ ejour }}
-    </div>
-    <div v-if="etarif" :class="['message', success ? 'success' : 'error']">
-      {{ etarif }}
-    </div>
+
     <div v-if="message" :class="['message', success ? 'success' : 'error']">
       {{ message }}
     </div>
@@ -56,9 +79,7 @@ export default {
     return {
       visiteurs: [],
       message: '',
-      ejour: '',
-      etarif: '',
-      success: false,
+      success: false
     }
   },
   async created() {
@@ -73,7 +94,11 @@ export default {
         this.visiteurs = (await response.json()).map(v => ({ 
           ...v, 
           editing: false,
-          
+            errors: {
+            nom: '',
+            jours: '',
+            tarif: ''
+            }
         }));
       } catch (error) {
         console.error('Erreur:', error);
@@ -83,48 +108,77 @@ export default {
     },
 
      toggleEdit(visiteur) {
-      visiteur.editing = !visiteur.editing;on
-      if (visiteur.editing) {
-        visiteur.errors.jours = '';
-        visiteur.errors.tarif = '';
+      visiteur.editing = !visiteur.editing;
+      if (!visiteur.editing) {
+        visiteur.errors = { nom: '', jours: '', tarif: '' };
       }
     },
     
-    validateJours(visiteur) {
-      if (visiteur.nombre_jours <= 0) {
-        this.ejour = 'Le nombre de jours doit être positif';
-        return false;
-      } else if (!Number.isInteger(visiteur.nombre_jours)) {
-        this.ejour = 'Doit être un nombre entier';
+    validateNom(visiteur) {
+      if (!visiteur.nom.trim()) {
+        visiteur.errors.nom = 'Le nom est obligatoire';
         return false;
       }
-      this.ejour = '';
+      if (visiteur.nom.length < 2) {
+        visiteur.errors.nom = 'Le nom doit contenir au moins 2 caractères';
+        return false;
+      }
+      visiteur.errors.nom = '';
+      return true;
+    },
+
+    validateJours(visiteur) {
+      const valeur = Number(visiteur.nombre_jours);
+      if (isNaN(valeur)) {
+        visiteur.errors.jours = 'Veuillez entrer un nombre valide';
+        return false;
+      }
+      if (valeur <= 0) {
+        visiteur.errors.jours = 'Doit être supérieur à 0';
+        return false;
+      }
+      if (!Number.isInteger(valeur)) {
+        visiteur.errors.jours = 'Doit être un nombre entier';
+        return false;
+      }
+      visiteur.errors.jours = '';
       return true;
     },
 
     validateTarif(visiteur) {
-      if (visiteur.tarif_journalier <= 0) {
-        this.etarif = 'Le tarif doit être positif';
+      const valeur = Number(visiteur.tarif_journalier);
+      if (isNaN(valeur)) {
+        visiteur.errors.tarif = 'Veuillez entrer un nombre valide';
         return false;
       }
-      this.etarif = '';
+      if (valeur <= 0) {
+        visiteur.errors.tarif = 'Doit être supérieur à 0';
+        return false;
+      }
+      visiteur.errors.tarif = '';
       return true;
     },
 
-    validateBeforeUpdate(visiteur) {
-      const validJours = this.validateJours(visiteur);
-      const validTarif = this.validateTarif(visiteur);
-      
-      if (!validJours || !validTarif) {
-        this.message = 'Veuillez corriger les erreurs avant de sauvegarder';
-        this.success = false;
-        return false;
-      }
-      return true;
+     isVisiteurValid(visiteur) {
+      return !visiteur.errors.nom && 
+             !visiteur.errors.jours && 
+             !visiteur.errors.tarif &&
+             visiteur.nom.trim() !== '' &&
+             visiteur.nombre_jours > 0 &&
+             visiteur.tarif_journalier > 0;
     },
 
     async updateVisiteur(visiteur) {
-      if (!this.validateBeforeUpdate(visiteur)) return;
+      const nomValide = this.validateNom(visiteur);
+      const joursValide = this.validateJours(visiteur);
+      const tarifValide = this.validateTarif(visiteur);
+      
+      if (!nomValide || !joursValide || !tarifValide) {
+        this.message = 'Veuillez corriger les erreurs avant de sauvegarder';
+        this.success = false;
+        return;
+      }
+      
       try {
         const response = await fetch(`/api/api/visiteurs.php?id=${visiteur.id}`, {
           method: 'PUT',
@@ -207,5 +261,15 @@ input {
 .error {
   background-color: #f2dede;
   color: #a94442;
+}
+.input-error {
+  border-color: #ff4444;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.8em;
+  display: block;
+  margin-top: 5px;
 }
 </style>

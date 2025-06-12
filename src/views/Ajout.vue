@@ -4,17 +4,37 @@
     <form @submit.prevent="submitForm">
       <div class="form-group">
         <label>Nom :</label>
-        <input v-model="visiteur.nom" required>
+         <input 
+          v-model.trim="visiteur.nom" 
+          @input="validerNom"
+          @blur="validerNom"
+          :class="{ 'input-error': erreurs.nom }"
+        >
         <span class="error-message" v-if="erreurs.nom">{{ erreurs.nom }}</span>
       </div>
       <div class="form-group">
         <label>Nombre de jours :</label>
-        <input v-model.number="visiteur.nombre_jours" type="number" required>
+        <input 
+          v-model.number="visiteur.nombre_jours" 
+          type="number" 
+          @input="validerJours"
+          @blur="validerJours"
+          :class="{ 'input-error': erreurs.jours }"
+          placeholder="1"
+        >
         <span class="error-message" v-if="erreurs.jours">{{ erreurs.jours }}</span>
       </div>
       <div class="form-group">
-        <label>Tarif journalier :</label>
-        <input v-model.number="visiteur.tarif_journalier" type="number" step="0.01" required>
+        <label>Tarif journalier (en Ar):</label>
+        <input 
+          v-model.number="visiteur.tarif_journalier" 
+          type="number" 
+          step="1"
+          @input="validerTarif"
+          @blur="validerTarif"
+          :class="{ 'input-error': erreurs.tarif }"
+          placeholder="1"
+        >
         <span class="error-message" v-if="erreurs.tarif">{{ erreurs.tarif }}</span>
       </div>
       <button type="submit">Ajouter</button>
@@ -36,6 +56,7 @@ export default {
         tarif_journalier: 0
       },
       erreurs: {
+        nom: '',
         jours: '',
         tarif: ''
       },
@@ -46,41 +67,76 @@ export default {
 
   computed: {
     formulaireValide() {
-      return this.visiteur.nombre_jours > 0 && 
-             this.visiteur.tarif_journalier > 0 &&
+      return !this.erreurs.nom && 
              !this.erreurs.jours && 
-             !this.erreurs.tarif;
+             !this.erreurs.tarif &&
+             this.visiteur.nom !== '' &&
+             this.visiteur.nombre_jours > 0 &&
+             this.visiteur.tarif_journalier > 0;
     }
+  },
+
+  mounted() {
+    // Validation initiale des champs
+    this.validerNom();
+    this.validerJours();
+    this.validerTarif();
   },
 
   methods: {
 
-     validerJours() {
-      if (this.visiteur.nombre_jours <= 0) {
-        this.erreurs.jours = 'Doit être supérieur à 0';
-      } else if (!Number.isInteger(this.visiteur.nombre_jours)) {
-        this.erreurs.jours = 'Doit être un nombre entier';
-      } else {
-        this.erreurs.jours = '';
+      validerNom() {
+      if (!this.visiteur.nom.trim()) {
+        this.erreurs.nom = 'Le nom est obligatoire';
+        return false;
       }
+      if (this.visiteur.nom.length < 2) {
+        this.erreurs.nom = 'Le nom doit contenir au moins 2 caractères';
+        return false;
+      }
+      this.erreurs.nom = '';
+      return true;
     },
 
-     validerTarif() {
-      if (this.visiteur.tarif_journalier <= 0) {
-        this.erreurs.tarif = 'Doit être supérieur à 0';
-      } else if (isNaN(this.visiteur.tarif_journalier)) {
-        this.erreurs.tarif = 'Doit être un nombre valide';
-      } else {
-        this.erreurs.tarif = '';
+    validerJours() {
+      const valeur = Number(this.visiteur.nombre_jours);
+      if (isNaN(valeur)) {
+        this.erreurs.jours = 'Veuillez entrer un nombre valide';
+        return false;
       }
+      if (valeur <= 0) {
+        this.erreurs.jours = 'Doit être supérieur à 0';
+        return false;
+      }
+      if (!Number.isInteger(valeur)) {
+        this.erreurs.jours = 'Doit être un nombre entier';
+        return false;
+      }
+      this.erreurs.jours = '';
+      return true;
+    },
+
+    validerTarif() {
+      const valeur = Number(this.visiteur.tarif_journalier);
+      if (isNaN(valeur)) {
+        this.erreurs.tarif = 'Veuillez entrer un nombre valide';
+        return false;
+      }
+      if (valeur <= 0) {
+        this.erreurs.tarif = 'Doit être supérieur à 0';
+        return false;
+      }
+      this.erreurs.tarif = '';
+      return true;
     },
 
     async submitForm() {
 
-      this.validerJours();
-      this.validerTarif();
+      const nomValide = this.validerNom();
+      const joursValide = this.validerJours();
+      const tarifValide = this.validerTarif();
 
-      if (!this.formulaireValide) {
+      if (!nomValide || !joursValide || !tarifValide) {
         this.message = 'Veuillez corriger les erreurs dans le formulaire';
         this.success = false;
         return;
@@ -100,12 +156,14 @@ export default {
         this.success = result.success;
         
         if (result.success) {
+          // Réinitialiser le formulaire après succès
           this.visiteur = { nom: '', nombre_jours: 0, tarif_journalier: 0 };
           this.erreurs = { nom: '', jours: '', tarif: '' };
         }
       } catch (error) {
         this.message = 'Erreur lors de la communication avec le serveur';
         this.success = false;
+        console.error('Erreur:', error);
       }
     }
   }
